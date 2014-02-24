@@ -1,0 +1,141 @@
+#!/usr/bin/env node
+
+var fs = require('fs-extra');
+var program = require('commander');
+var _ = require('underscore');
+var utils = require('component').utils;
+var path = require('path');
+var resolve = path.resolve;
+var pkg = require('../package.json');
+
+
+program
+  .option('-t, --template <name>', 'Template you want to use', 'default')
+  .option('-p, --params <name:value>', 'List of parameters to apply to the template')
+  .version(pkg.version)
+  .description(pkg.description)
+  .on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    # Generate ./index.js with the default template');
+    console.log('    $ component generate index.js');
+    console.log();
+    console.log('    # Generate ./index.js with the template "exports"');
+    console.log('    $ component generate index.js -t exports -p name:UserModel');
+    console.log();
+    console.log();
+    console.log('  Don\'t hesitate to make a PR to add more templates.');
+    console.log();
+  })
+  .parse(process.argv);
+
+
+if (!fs.existsSync('component.json')) {
+  utils.fatal('missing component.json');
+}
+
+var manifestPath = resolve('component.json');
+var manifest = fs.readJsonSync(manifestPath);
+var filename = program.args[0];
+var ext = path.extname(filename);
+var templateName = program.template;
+var params;
+
+if (program.params) {
+  // convert string `name:value` to object { name: value }
+  params = program.params.split(',').map(function(p) {
+    return p.split(':').map(function(str) {
+      return str.trim();
+    });
+  });
+
+  params = _.object(params);
+}
+
+// Render template
+var filepath = resolve(__dirname, '../template/' + ext.replace('.', '') + '/' + templateName + '.tpl');
+var tplExists = fs.existsSync(filepath);
+
+if (!tplExists && templateName !== 'default') {
+  utils.fatal('the template "' + templateName + '" does\'nt exists');
+}
+
+var content = tplExists
+  ? fs.readFileSync(filepath).toString()
+  : '';
+
+var template = _.template(content, params || {});
+
+var type;
+switch(ext) {
+  case '.js':
+  case '.coffee':
+    type = 'scripts';
+    break;
+
+  case '.css':
+  case '.styl':
+  case '.scss':
+  case '.sass':
+    type = 'styles';
+    break;
+
+  case '.html':
+  case '.jade':
+  case '.hbs':
+    type = 'templates';
+    break;
+
+  default:
+    utils.fatal('the extension ' + ext + ' is not recognized. Don\'t hesitate to make a PR');
+}
+
+// register the file in the manifest
+if (!manifest[type]) {
+  manifest[type] = [];
+}
+
+if (manifest[type].indexOf(filename) < 0) {
+  manifest[type].push(filename);
+}
+
+if (fs.existsSync(filename)) {
+  promptReplaceFile();
+} else {
+  save();
+}
+
+
+function promptReplaceFile() {
+  var readline = require('readline');
+  var rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.question('the file already exists. Do you want to replace it? [Y/n] ', function(answer) {
+    rl.close();
+
+    if (answer === 'Y') {
+      return save();
+    }
+
+    save(false);
+  });
+}
+
+function save(replace) {
+  var err;
+
+  if (replace !== false) {
+    // write the template
+    err = fs.outputFileSync(filename, template);
+    if (err) utils.fatal(err);
+    utils.log('created', filename);
+  }
+
+  // update component.json file
+  err = fs.writeJsonSync(manifestPath, manifest);
+  if (err) utils.fatal(err);
+  utils.log('added', filename);
+}
