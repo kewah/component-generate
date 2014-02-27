@@ -57,7 +57,7 @@ var filepath = resolve(__dirname, '../template/' + ext.replace('.', '') + '/' + 
 var tplExists = fs.existsSync(filepath);
 
 if (!tplExists && templateName !== 'default') {
-  utils.fatal('the template "' + templateName + '" does\'nt exists');
+  utils.fatal('the template "' + templateName + '" doesn\'t exist');
 }
 
 var content = tplExists
