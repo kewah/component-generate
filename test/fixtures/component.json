@@ -1,0 +1,9 @@
+{
+  "name": "fixtures",
+  "description": "",
+  "dependencies": {},
+  "development": {},
+  "scripts": [
+    "index.js"
+  ]
+}
