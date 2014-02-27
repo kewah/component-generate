@@ -1,7 +1,13 @@
 {
   "name": "component-generate",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Create a file based on a template and add it to component.json",
+  "author": "kewah <keuwah@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "component",
+    "generator"
+  ],
   "bin": {
     "component-generate": "bin/component-generate"
   },
@@ -12,8 +18,6 @@
     "type": "git",
     "url": "git://github.com/kewah/component-generate.git"
   },
-  "author": "kewah <keuwah@gmail.com>",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/kewah/component-generate/issues"
   },
